@@ -25,7 +25,7 @@ bot.on('message', msg => {
 
     if (msg.content.startsWith(prefix + 'play')) {
         // print message if author is not in a voice channel
-        var msgSender = msg.author.id;
+        var msgSender = msg.author;
         // get all voice channels and check if the sender is one of them
         // only get channels from the server that the message was sent from
         var allChannels = msg.guild.channels.array();
@@ -42,7 +42,7 @@ bot.on('message', msg => {
             let channelMembers = voiceChannels[i].members.array();
             let channelFound = false;
             for (let j = 0; j < channelMembers.length; j++) {
-                if (channelMembers[i].id === msgSender) {
+                if (channelMembers[j].user.id === msgSender.id) {
                     channelToStream = voiceChannels[i];
                     channelFound = true;
                     break;

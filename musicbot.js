@@ -56,6 +56,12 @@ bot.on('message', msg => {
             msg.channel.sendMessage('You must be in a voice channel to play a song.');
             return;
         }
+
+        // join the voice channel and stream the video
+        var songUrl = msg.content.split(' ')[1];
+        channelToStream.join().then(connection => {
+            connection.playStream(youtubeStream(songUrl));
+        });
     }
 });
 

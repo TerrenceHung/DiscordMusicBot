@@ -60,7 +60,10 @@ bot.on('message', msg => {
         // join the voice channel and stream the video
         var songUrl = msg.content.split(' ')[1];
         channelToStream.join().then(connection => {
-            connection.playStream(youtubeStream(songUrl));
+            var dispatcher = connection.playStream(youtubeStream(songUrl));
+            dispatcher.on('end', () => {
+                connection.disconnect();
+            });
         });
     }
 });

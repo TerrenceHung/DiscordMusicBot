@@ -9,11 +9,17 @@ var youtubeApiKey;;
 var currentChannel;
 var songQueue = [];
 
-// taken from https://gist.github.com/takien/4077195
+/**
+ * Gets the ID of a YouTube video given the video URL.
+ * taken from https://gist.github.com/takien/4077195
+ *
+ * @param {url} The url of the YouTube video
+ * @return {String} The ID of the video
+ */
 function youtubeGetId(url){
     var ID = '';
     url = url.replace(/(>|<)/gi,'').split(/(vi\/|v=|\/v\/|youtu\.be\/|\/embed\/)/);
-    if(url[2] !== undefined) {
+    if (url[2] !== undefined) {
         ID = url[2].split(/[^0-9a-z_\-]/i);
         ID = ID[0];
     } else {
@@ -22,17 +28,23 @@ function youtubeGetId(url){
     return ID;
 }
 
-function getSongName(videoUrl) {
-    var videoId = youtubeGetId(videoUrl);
+/**
+ * Sends a message with the current song's name.
+ *
+ * @param {url} The url of the YouTube video
+ * @return {String} The name of the video
+ */
+function getSongName(url) {
+    var videoId = youtubeGetId(url);
     // get response from youtube API and convert JSON to javascript object
     // request url from here
     // http://stackoverflow.com/questions/28018792/how-to-get-youtube-video-title-with-v3-url-api-in-javascript-w-ajax-json
     var ytResponseUrl = 'https://www.googleapis.com/youtube/v3/videos?id=' +
         videoId + '&key=' + youtubeApiKey + '&fields=items(snippet(title))&part=snippet';
-    request(ytResponseUrl, (error, response, body) => {
+    request(ytResponseUrl, function(error, response, body) {
         if (!error && response.statusCode === 200) {
-            var videoData = JSON.parse(body)['items'][0]['snippet']['title'];
-            sendMessage('Now playing `' + videoData + '`');
+            var title = JSON.parse(body)['items'][0]['snippet']['title'];
+            sendMessage('Now playing `' + title + '`');
         }
     });
 }
@@ -55,11 +67,11 @@ try {
     process.exit();
 }
 
-bot.on('ready', () => {
+bot.on('ready', function() {
     console.log('Bot ready');
 });
 
-bot.on('message', msg => {
+bot.on('message', function(msg) {
     let prefix = '.';
     currentChannel = msg.channel;
     // if not a bot command or message was sent from bot then do nothing
@@ -103,10 +115,10 @@ bot.on('message', msg => {
 
         // join the voice channel and stream the video
         var songUrl = msg.content.split(' ')[1];
-        channelToStream.join().then(connection => {
+        channelToStream.join().then(function(connection) {
             var dispatcher = connection.playStream(youtubeStream(songUrl));
             getSongName(songUrl);
-            dispatcher.on('end', () => {
+            dispatcher.on('end', function() {
                 connection.disconnect();
             });
         });

@@ -14,7 +14,7 @@ var songQueue = [];
  * Gets the ID of a YouTube video given the video URL.
  * taken from https://gist.github.com/takien/4077195
  *
- * @param {url} The url of the YouTube video
+ * @param {String} url The url of the YouTube video
  * @return {String} The ID of the video
  */
 function youtubeGetId(url){
@@ -30,22 +30,48 @@ function youtubeGetId(url){
 }
 
 /**
- * Sends a message with the current song's name.
+ * Gets the name of the song given a YouTube url.
  *
- * @param {url} The url of the YouTube video
- * @return {String} The name of the video
+ * @param {String} url The url of the YouTube video
+ * @return {Promise<String>} A promise to the video name
  */
 function getSongName(url) {
-    var videoId = youtubeGetId(url);
-    // get response from youtube API and convert JSON to javascript object
-    // request url from here
-    // http://stackoverflow.com/questions/28018792/how-to-get-youtube-video-title-with-v3-url-api-in-javascript-w-ajax-json
-    var ytResponseUrl = 'https://www.googleapis.com/youtube/v3/videos?id=' +
-        videoId + '&key=' + youtubeApiKey + '&fields=items(snippet(title))&part=snippet';
-    request(ytResponseUrl, function(error, response, body) {
-        if (!error && response.statusCode === 200) {
-            var title = JSON.parse(body)['items'][0]['snippet']['title'];
-            channelOfLastMessage.sendMessage('Now playing `' + title + '`');
+    return new Promise(function(resolve) {
+        var videoId = youtubeGetId(url);
+        // get response from youtube API and convert JSON to javascript object
+        // request url from here
+        // http://stackoverflow.com/questions/28018792/how-to-get-youtube-video-title-with-v3-url-api-in-javascript-w-ajax-json
+        var ytResponseUrl = 'https://www.googleapis.com/youtube/v3/videos?id=' +
+            videoId + '&key=' + youtubeApiKey + '&fields=items(snippet(title))&part=snippet';
+        request(ytResponseUrl, function(error, response, body) {
+            if (!error && response.statusCode === 200) {
+                var title = JSON.parse(body)['items'][0]['snippet']['title'];
+                resolve(title);
+            }
+        });
+    });
+}
+
+/**
+ * Plays the given song to the voice connection and registers end song event.
+ *
+ * @param {VoiceConnection} connection The bot's current voice connection
+ * @param {String} song The url of the YouTube video to play
+ */
+function playSong(connection, song) {
+    var dispatcher = connection.playStream(youtubeStream(song));
+    getSongName(song).then(function(title) {
+        channelOfLastMessage.sendMessage('Now playing `' + title + '`');
+    });
+
+    dispatcher.on('end', function() {
+        // disconnect if queue is empty, otherwise play the next song
+        if (songQueue.length) {
+            // pop first element to get next song
+            playSong(connection, songQueue.shift());
+        } else {
+            connection.disconnect();
+            currentVoiceChannel = null;
         }
     });
 }
@@ -115,17 +141,23 @@ bot.on('message', function(msg) {
             return;
         }
 
+        // if the bot is already inside a voice channel, then it's playing music
+        var previouslyActive = currentVoiceChannel === null ? false : true;
+
         var songUrl = msg.content.split(' ')[1];
-        // join the voice channel and stream the video
-        channelToStream.join().then(function(connection) {
-            currentVoiceChannel = channelToStream;
-            var streamDispatcher = connection.playStream(youtubeStream(songUrl));
-            getSongName(songUrl);
-            streamDispatcher.on('end', function() {
-                connection.disconnect();
-                currentVoiceChannel = null;
+        if (!previouslyActive) {
+            // not playing anything, so join a channel and play
+            channelToStream.join().then(function(connection) {
+                currentVoiceChannel = channelToStream;
+                playSong(connection, songUrl);
             });
-        });
+        } else {
+            // queue up the next song
+            songQueue.push(songUrl);
+            getSongName(songUrl).then(function(title) {
+                channelOfLastMessage.sendMessage('`' + title + '` added to song queue');
+            });
+        }
     }
 });
 

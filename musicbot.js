@@ -5,9 +5,12 @@ var request = require('request');
 
 var bot = new Discord.Client();
 var token;
-var youtubeApiKey;;
-var currentChannel;
+var youtubeApiKey;
+var channelOfLastMessage;
 var songQueue = [];
+var streamDispatcher = null;
+var voiceConnection;
+var currentVoiceChannel = null;
 
 /**
  * Gets the ID of a YouTube video given the video URL.
@@ -44,13 +47,9 @@ function getSongName(url) {
     request(ytResponseUrl, function(error, response, body) {
         if (!error && response.statusCode === 200) {
             var title = JSON.parse(body)['items'][0]['snippet']['title'];
-            sendMessage('Now playing `' + title + '`');
+            channelOfLastMessage.sendMessage('Now playing `' + title + '`');
         }
     });
-}
-
-function sendMessage(msg) {
-    currentChannel.sendMessage(msg);
 }
 
 try {
@@ -73,7 +72,7 @@ bot.on('ready', function() {
 
 bot.on('message', function(msg) {
     let prefix = '.';
-    currentChannel = msg.channel;
+    channelOfLastMessage = msg.channel;
     // if not a bot command or message was sent from bot then do nothing
     if (!(msg.content.startsWith(prefix)) || msg.author.bot) {
         return;
@@ -109,17 +108,25 @@ bot.on('message', function(msg) {
             }
         }
         if (channelToStream === null) {
-            msg.channel.sendMessage('You must be in a voice channel to play a song.');
+            channelOfLastMessage.sendMessage('You must be in a voice channel to play a song.');
+            return;
+        } else if (currentVoiceChannel !== null && channelToStream.id !== currentVoiceChannel.id) {
+            channelOfLastMessage.sendMessage('The bot is currently playing music in `'
+                + currentVoiceChannel.name + '`. Please join that voice channel before requesting '
+                + 'songs.');
             return;
         }
 
-        // join the voice channel and stream the video
         var songUrl = msg.content.split(' ')[1];
+        // join the voice channel and stream the video
         channelToStream.join().then(function(connection) {
-            var dispatcher = connection.playStream(youtubeStream(songUrl));
+            voiceConnection = connection;
+            currentVoiceChannel = channelToStream;
+            streamDispatcher = voiceConnection.playStream(youtubeStream(songUrl));
             getSongName(songUrl);
-            dispatcher.on('end', function() {
-                connection.disconnect();
+            streamDispatcher.on('end', function() {
+                voiceConnection.disconnect();
+                currentVoiceChannel = null;
             });
         });
     }

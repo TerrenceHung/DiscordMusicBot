@@ -7,10 +7,8 @@ var bot = new Discord.Client();
 var token;
 var youtubeApiKey;
 var channelOfLastMessage;
-var songQueue = [];
-var streamDispatcher = null;
-var voiceConnection;
 var currentVoiceChannel = null;
+var songQueue = [];
 
 /**
  * Gets the ID of a YouTube video given the video URL.
@@ -120,12 +118,11 @@ bot.on('message', function(msg) {
         var songUrl = msg.content.split(' ')[1];
         // join the voice channel and stream the video
         channelToStream.join().then(function(connection) {
-            voiceConnection = connection;
             currentVoiceChannel = channelToStream;
-            streamDispatcher = voiceConnection.playStream(youtubeStream(songUrl));
+            var streamDispatcher = connection.playStream(youtubeStream(songUrl));
             getSongName(songUrl);
             streamDispatcher.on('end', function() {
-                voiceConnection.disconnect();
+                connection.disconnect();
                 currentVoiceChannel = null;
             });
         });

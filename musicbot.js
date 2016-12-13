@@ -56,12 +56,15 @@ function getSongName(url) {
  * Plays the given song to the voice connection and registers end song event.
  *
  * @param {VoiceConnection} connection The bot's current voice connection
- * @param {String} song The url of the YouTube video to play
+ * @param songRequest Information about the song request
+ * @param songRequest.name The username of the person that created this request
+ * @param songRequest.song The URL of the YouTube video to play
  */
-function playSong(connection, song) {
-    var dispatcher = connection.playStream(youtubeStream(song));
-    getSongName(song).then(function(title) {
-        channelOfLastMessage.sendMessage('Now playing `' + title + '`');
+function playSong(connection, songRequest) {
+    var dispatcher = connection.playStream(youtubeStream(songRequest.song));
+    getSongName(songRequest.song).then(function(title) {
+        channelOfLastMessage.sendMessage('Now playing `' + title + '`, requested by `'
+            + songRequest.name + '`.');
     });
 
     dispatcher.on('end', function() {
@@ -145,15 +148,16 @@ bot.on('message', function(msg) {
         var previouslyActive = currentVoiceChannel === null ? false : true;
 
         var songUrl = msg.content.split(' ')[1];
+        var songRequest = {name: msg.author.username, song: songUrl};
         if (!previouslyActive) {
             // not playing anything, so join a channel and play
             channelToStream.join().then(function(connection) {
                 currentVoiceChannel = channelToStream;
-                playSong(connection, songUrl);
+                playSong(connection, songRequest);
             });
         } else {
             // queue up the next song
-            songQueue.push(songUrl);
+            songQueue.push(songRequest);
             getSongName(songUrl).then(function(title) {
                 channelOfLastMessage.sendMessage('`' + title + '` added to song queue');
             });

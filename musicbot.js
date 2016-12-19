@@ -1,62 +1,13 @@
 var fs = require('fs');
 var Discord = require('discord.js');
 var youtubeStream = require('youtube-audio-stream');
-var request = require('request');
+var Helpers = require('./helpers');
 
 var bot = new Discord.Client();
 var token;
-var youtubeApiKey;
 var messageChannel;
 var currentVoiceChannel = null;
 var songQueue = [];
-
-/**
- * Gets the ID of a YouTube video given the video URL.
- * taken from https://gist.github.com/takien/4077195
- *
- * @param {String} url The url of the YouTube video
- * @return {String} The ID of the video
- */
-function youtubeGetId(url){
-    var ID = '';
-    url = url.replace(/(>|<)/gi,'').split(/(vi\/|v=|\/v\/|youtu\.be\/|\/embed\/)/);
-    if (url[2] !== undefined) {
-        ID = url[2].split(/[^0-9a-z_\-]/i);
-        ID = ID[0];
-    } else {
-        ID = url;
-    }
-    return ID;
-}
-
-/**
- * Gets the name of the song given a YouTube url.
- *
- * @param {String} url The url of the YouTube video
- * @return {Promise<String>} A promise to the video name
- */
-function getSongName(url) {
-    return new Promise(function(resolve, reject) {
-        var videoId = youtubeGetId(url);
-        // get response from youtube API and convert JSON to javascript object
-        // request url from here
-        // http://stackoverflow.com/questions/28018792/how-to-get-youtube-video-title-with-v3-url-api-in-javascript-w-ajax-json
-        var ytResponseUrl = 'https://www.googleapis.com/youtube/v3/videos?id=' +
-            videoId + '&key=' + youtubeApiKey + '&fields=items(snippet(title))&part=snippet';
-        request(ytResponseUrl, function(error, response, body) {
-            if (!error && response.statusCode === 200) {
-                try {
-                    var title = JSON.parse(body)['items'][0]['snippet']['title'];
-                } catch (err) {
-                    reject(Error('Could not get song name.'));
-                }
-                resolve(title);
-            } else {
-                reject(Error('Could not get song name.'));
-            }
-        });
-    });
-}
 
 /**
  * Plays the given song to the voice connection and registers end song event.
@@ -88,13 +39,6 @@ try {
     token = fs.readFileSync('token', 'utf8');
 } catch (err) {
     console.log('Could not open token file');
-    process.exit();
-}
-
-try {
-    youtubeApiKey = fs.readFileSync('youtube_api_key', 'utf8');
-} catch (err) {
-    console.log('Could not open Youtube API Key file');
     process.exit();
 }
 
@@ -153,7 +97,7 @@ bot.on('message', function(msg) {
 
         var songUrl = msg.content.split(' ')[1];
         var songRequest = {requester: msg.author.username, url: songUrl};
-        getSongName(songUrl).then(function(title) {
+        Helpers.getSongName(songUrl).then(function(title) {
             // only process the song if the title can be obtained
             songRequest.title = title;
             songQueue.push(songRequest);
@@ -164,7 +108,7 @@ bot.on('message', function(msg) {
                     playSong(connection, songRequest);
                 });
             } else {
-                getSongName(songUrl).then(function(title) {
+                Helpers.getSongName(songUrl).then(function(title) {
                     messageChannel.sendMessage('`' + title + '` added to song queue.');
                 });
             }

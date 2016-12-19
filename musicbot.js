@@ -6,7 +6,7 @@ var request = require('request');
 var bot = new Discord.Client();
 var token;
 var youtubeApiKey;
-var channelOfLastMessage;
+var messageChannel;
 var currentVoiceChannel = null;
 var songQueue = [];
 
@@ -36,7 +36,7 @@ function youtubeGetId(url){
  * @return {Promise<String>} A promise to the video name
  */
 function getSongName(url) {
-    return new Promise(function(resolve) {
+    return new Promise(function(resolve, reject) {
         var videoId = youtubeGetId(url);
         // get response from youtube API and convert JSON to javascript object
         // request url from here
@@ -45,8 +45,14 @@ function getSongName(url) {
             videoId + '&key=' + youtubeApiKey + '&fields=items(snippet(title))&part=snippet';
         request(ytResponseUrl, function(error, response, body) {
             if (!error && response.statusCode === 200) {
-                var title = JSON.parse(body)['items'][0]['snippet']['title'];
+                try {
+                    var title = JSON.parse(body)['items'][0]['snippet']['title'];
+                } catch (err) {
+                    reject(Error('Could not get song name.'));
+                }
                 resolve(title);
+            } else {
+                reject(Error('Could not get song name.'));
             }
         });
     });
@@ -61,17 +67,16 @@ function getSongName(url) {
  * @param songRequest.song The URL of the YouTube video to play
  */
 function playSong(connection, songRequest) {
-    var dispatcher = connection.playStream(youtubeStream(songRequest.song));
-    getSongName(songRequest.song).then(function(title) {
-        channelOfLastMessage.sendMessage('Now playing `' + title + '`, requested by `'
-            + songRequest.name + '`.');
-    });
+    var dispatcher = connection.playStream(youtubeStream(songRequest.url));
+    messageChannel.sendMessage('Now playing `' + songRequest.title + '`, requested by `'
+        + songRequest.requester + '`.');
 
     dispatcher.on('end', function() {
+        // remove song that just finished from the queue
+        songQueue.shift();
         // disconnect if queue is empty, otherwise play the next song
         if (songQueue.length) {
-            // pop first element to get next song
-            playSong(connection, songQueue.shift());
+            playSong(connection, songQueue[0]);
         } else {
             connection.disconnect();
             currentVoiceChannel = null;
@@ -99,12 +104,11 @@ bot.on('ready', function() {
 
 bot.on('message', function(msg) {
     let prefix = '.';
-    channelOfLastMessage = msg.channel;
     // if not a bot command or message was sent from bot then do nothing
     if (!(msg.content.startsWith(prefix)) || msg.author.bot) {
         return;
     }
-
+    messageChannel = msg.channel;
     if (msg.content.startsWith(prefix + 'play')) {
         // print message if author is not in a voice channel
         var msgSender = msg.author;
@@ -135,10 +139,10 @@ bot.on('message', function(msg) {
             }
         }
         if (channelToStream === null) {
-            channelOfLastMessage.sendMessage('You must be in a voice channel to play a song.');
+            messageChannel.sendMessage('You must be in a voice channel to play a song.');
             return;
         } else if (currentVoiceChannel !== null && channelToStream.id !== currentVoiceChannel.id) {
-            channelOfLastMessage.sendMessage('The bot is currently playing music in `'
+            messageChannel.sendMessage('The bot is currently playing music in `'
                 + currentVoiceChannel.name + '`. Please join that voice channel before requesting '
                 + 'songs.');
             return;
@@ -148,19 +152,42 @@ bot.on('message', function(msg) {
         var previouslyActive = currentVoiceChannel === null ? false : true;
 
         var songUrl = msg.content.split(' ')[1];
-        var songRequest = {name: msg.author.username, song: songUrl};
-        if (!previouslyActive) {
-            // not playing anything, so join a channel and play
-            channelToStream.join().then(function(connection) {
-                currentVoiceChannel = channelToStream;
-                playSong(connection, songRequest);
-            });
-        } else {
-            // queue up the next song
+        var songRequest = {requester: msg.author.username, url: songUrl};
+        getSongName(songUrl).then(function(title) {
+            // only process the song if the title can be obtained
+            songRequest.title = title;
             songQueue.push(songRequest);
-            getSongName(songUrl).then(function(title) {
-                channelOfLastMessage.sendMessage('`' + title + '` added to song queue');
-            });
+            if (!previouslyActive) {
+                // not playing anything, so join a channel and play
+                channelToStream.join().then(function(connection) {
+                    currentVoiceChannel = channelToStream;
+                    playSong(connection, songRequest);
+                });
+            } else {
+                getSongName(songUrl).then(function(title) {
+                    messageChannel.sendMessage('`' + title + '` added to song queue.');
+                });
+            }
+        }, function(error) {
+            messageChannel.sendMessage(error + ' Please try again.');
+        });
+    } else if (msg.content.startsWith(prefix + 'queue')) {
+        if (!songQueue.length) {
+            messageChannel.sendMessage('No songs in queue.');
+        } else {
+            var queueMessage = '';
+            // wrap url in angled brackets to prevent embed
+            queueMessage += 'Currently playing `' + songQueue[0].title + '`, requested by `'
+                + songQueue[0].requester + '`.\n<' + songQueue[0].url + '>\n';
+            if (songQueue.length > 1) {
+                queueMessage += 'Up next:\n';
+                for (let i = 1; i < songQueue.length; i++) {
+                    queueMessage += i + ') `' + songQueue[i].title + '`, requested by `'
+                        + songQueue[i].requester + '`.\n';
+                }
+            }
+            // cut out the last \n
+            messageChannel.sendMessage(queueMessage.slice(0, -1));
         }
     }
 });

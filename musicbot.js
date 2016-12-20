@@ -145,18 +145,20 @@ bot.on('message', function(msg) {
         // these commands are invalid if no song is playing
         messageChannel.sendMessage('No song is currently being played.');
     } else if (msg.content === prefix + 'pause') {
+        var resumeMsg = 'Type `.resume` to resume playback.';
         if (dispatcher.paused) {
-            messageChannel.sendMessage('Song is already paused. Type `.resume` to resume playback.');
+            messageChannel.sendMessage('Song is already paused. ' + resumeMsg);
         } else {
             dispatcher.pause();
-            messageChannel.sendMessage('Playback paused.');
+            messageChannel.sendMessage('Playback paused. ' + resumeMsg);
         }
     } else if (msg.content === prefix + 'resume') {
+        var pauseMsg = 'Type `.pause` to pause playback.';
         if (!dispatcher.paused) {
-            messageChannel.sendMessage('Song is already playing. Type `.pause` to pause playback.');
+            messageChannel.sendMessage('Song is already playing. ' + pauseMsg);
         } else {
             dispatcher.resume();
-            messageChannel.sendMessage('Playback resumed.');
+            messageChannel.sendMessage('Playback resumed. ' + pauseMsg);
         }
     } else if (msg.content === prefix + 'skip') {
         dispatcher.end();
@@ -166,7 +168,8 @@ bot.on('message', function(msg) {
             + '`.stoprepeat` to continue playing song queue.')
     } else if (msg.content === prefix + 'stoprepeat') {
         repeat = false;
-        messageChannel.sendMessage('Repeat mode disabled.');
+        messageChannel.sendMessage('Repeat mode disabled. Type `.repeat` to play the current song '
+            + 'on repeat.');
     }
 });
 

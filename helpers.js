@@ -57,5 +57,14 @@ module.exports = {
                 }
             });
         });
+    },
+    /**
+     * Converts the volume from a scale from 0-100 to a scale from 0-2.
+     *
+     * @param {Number} volume The volume in a scale from 0-100
+     * @return {Number} The volume in a scale from 0-2
+     */
+    downscaleVolume: function(volume) {
+        return volume * 2 / 100;
     }
 }

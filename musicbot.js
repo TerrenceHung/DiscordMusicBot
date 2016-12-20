@@ -10,6 +10,7 @@ var currentVoiceChannel = null;
 var songQueue = [];
 var dispatcher = null;
 var repeat = false;
+var volume = 50;
 
 /**
  * Plays the given song to the voice connection and registers end song event.
@@ -21,6 +22,7 @@ var repeat = false;
  */
 function playSong(connection, songRequest) {
     dispatcher = connection.playStream(youtubeStream(songRequest.url));
+    dispatcher.setVolume(Helpers.downscaleVolume(volume));
     messageChannel.sendMessage('Now playing `' + songRequest.title + '`, requested by `'
         + songRequest.requester + '`.');
 
@@ -170,6 +172,23 @@ bot.on('message', function(msg) {
         repeat = false;
         messageChannel.sendMessage('Repeat mode disabled. Type `.repeat` to play the current song '
             + 'on repeat.');
+    } else if (msg.content.startsWith(prefix + 'volume')) {
+        // if no arguments, then just print current volume
+        if (msg.content === prefix + 'volume') {
+            messageChannel.sendMessage('The current volume is ' + volume + '.');
+            return;
+        }
+        var inVolume = Number(msg.content.split(' ')[1]);
+        if (inVolume < 0 || inVolume > 100) {
+            messageChannel.sendMessage('Please enter a value between 0 and 100 inclusive.');
+            return;
+        }
+        volume = inVolume;
+        // if a song is currently playing then change the volume of it
+        if (dispatcher !== null) {
+            dispatcher.setVolume(Helpers.downscaleVolume(volume));
+        }
+        messageChannel.sendMessage('Volume changed to ' + volume + '.');
     }
 });
 

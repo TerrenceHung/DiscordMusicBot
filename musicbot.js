@@ -9,6 +9,7 @@ var messageChannel;
 var currentVoiceChannel = null;
 var songQueue = [];
 var dispatcher = null;
+var repeat = false;
 
 /**
  * Plays the given song to the voice connection and registers end song event.
@@ -24,15 +25,19 @@ function playSong(connection, songRequest) {
         + songRequest.requester + '`.');
 
     dispatcher.on('end', function() {
-        // remove song that just finished from the queue
-        songQueue.shift();
-        // disconnect if queue is empty, otherwise play the next song
-        if (songQueue.length) {
+        if (repeat) {
             playSong(connection, songQueue[0]);
         } else {
-            connection.disconnect();
-            currentVoiceChannel = null;
-            dispatcher = null;
+            // remove song that just finished from the queue
+            songQueue.shift();
+            // disconnect if queue is empty, otherwise play the next song
+            if (songQueue.length) {
+                playSong(connection, songQueue[0]);
+            } else {
+                connection.disconnect();
+                currentVoiceChannel = null;
+                dispatcher = null;
+            }
         }
     });
 }
@@ -136,24 +141,32 @@ bot.on('message', function(msg) {
             // cut out the last \n
             messageChannel.sendMessage(queueMessage.slice(0, -1));
         }
+    } else if (dispatcher === null && ['.pause', '.resume', '.skip', '.repeat'].indexOf(msg.content) !== -1) {
+        // these commands are invalid if no song is playing
+        messageChannel.sendMessage('No song is currently being played.');
     } else if (msg.content === prefix + 'pause') {
-        if (dispatcher === null) {
-            messageChannel.sendMessage('No song is currently being played.');
-        } else if (dispatcher.paused) {
+        if (dispatcher.paused) {
             messageChannel.sendMessage('Song is already paused. Type `.resume` to resume playback.');
         } else {
             dispatcher.pause();
             messageChannel.sendMessage('Playback paused.');
         }
     } else if (msg.content === prefix + 'resume') {
-        if (dispatcher === null) {
-            messageChannel.sendMessage('No song is currently being played.');
-        } else if (!dispatcher.paused) {
+        if (!dispatcher.paused) {
             messageChannel.sendMessage('Song is already playing. Type `.pause` to pause playback.');
         } else {
             dispatcher.resume();
             messageChannel.sendMessage('Playback resumed.');
         }
+    } else if (msg.content === prefix + 'skip') {
+        dispatcher.end();
+    } else if (msg.content === prefix + 'repeat') {
+        repeat = true;
+        messageChannel.sendMessage('`' + songQueue[0].title + '` is now playing on repeat. Type '
+            + '`.stoprepeat` to continue playing song queue.')
+    } else if (msg.content === prefix + 'stoprepeat') {
+        repeat = false;
+        messageChannel.sendMessage('Repeat mode disabled.');
     }
 });
 

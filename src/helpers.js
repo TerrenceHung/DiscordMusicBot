@@ -111,7 +111,6 @@ module.exports = {
                 + '&key=' + youtubeApiKey + '&part=snippet,contentDetails&fields=items(snippet('
                 + 'title),%20contentDetails(duration))';
             request(ytResponseUrl, function(error, response, body) {
-                var duration;
                 if (!error && response.statusCode === 200) {
                     try {
                         var title = JSON.parse(body)['items'][0]['snippet']['title'];
@@ -120,7 +119,7 @@ module.exports = {
                         reject(Error('Could not get song info.'));
                     }
                     try {
-                        duration = convertTime(rawDuration);
+                        var duration = convertTime(rawDuration);
                     } catch (err) {
                         if (err instanceof TooLongError) {
                             reject(new TooLongError());

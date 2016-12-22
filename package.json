@@ -2,7 +2,7 @@
   "name": "discordmusicbot",
   "version": "1.0.0",
   "description": "Music player for your Discord servers!",
-  "main": "musicbot.js",
+  "main": "src/musicbot.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },

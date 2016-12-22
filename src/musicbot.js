@@ -2,6 +2,7 @@ var fs = require('fs');
 var Discord = require('discord.js');
 var youtubeStream = require('youtube-audio-stream');
 var Helpers = require('./helpers');
+var TooLongError = require('./TooLongError');
 
 var bot = new Discord.Client();
 var token;
@@ -11,6 +12,7 @@ var songQueue = [];
 var dispatcher = null;
 var repeat = false;
 var volume = 50;
+var invalidIfNoSong = ['.pause', '.resume', '.skip','.repeat', '.stoprepeat'];
 
 /**
  * Plays the given song to the voice connection and registers end song event.
@@ -23,10 +25,12 @@ var volume = 50;
 function playSong(connection, songRequest) {
     dispatcher = connection.playStream(youtubeStream(songRequest.url));
     dispatcher.setVolume(Helpers.downscaleVolume(volume));
-    messageChannel.sendMessage('Now playing `' + songRequest.title + '`, requested by `'
-        + songRequest.requester + '`.');
+    messageChannel.sendMessage('Now playing `' + songRequest.title + '` (' + songRequest.duration
+        + '), requested by `' + songRequest.requester + '`.');
+    bot.user.setGame(songRequest.title);
 
     dispatcher.on('end', function() {
+        bot.user.setGame();
         if (repeat) {
             playSong(connection, songQueue[0]);
         } else {
@@ -45,11 +49,16 @@ function playSong(connection, songRequest) {
 }
 
 try {
-    token = fs.readFileSync('token', 'utf8');
+    token = fs.readFileSync(__dirname + '/../token', 'utf8');
 } catch (err) {
     console.log('Could not open token file');
     process.exit();
 }
+
+process.on('SIGINT', function() {
+    bot.destroy();
+    process.exit();
+});
 
 bot.on('ready', function() {
     console.log('Bot ready');
@@ -106,9 +115,10 @@ bot.on('message', function(msg) {
 
         var songUrl = msg.content.split(' ')[1];
         var songRequest = {requester: msg.author.username, url: songUrl};
-        Helpers.getSongName(songUrl).then(function(title) {
-            // only process the song if the title can be obtained
-            songRequest.title = title;
+        Helpers.getSongInfo(songUrl).then(function(info) {
+            // only process the song if the info can be obtained
+            songRequest.title = info.title;
+            songRequest.duration = info.duration;
             songQueue.push(songRequest);
             if (!previouslyActive) {
                 // not playing anything, so join a channel and play
@@ -117,13 +127,18 @@ bot.on('message', function(msg) {
                     playSong(connection, songRequest);
                 });
             } else {
-                Helpers.getSongName(songUrl).then(function(title) {
-                    messageChannel.sendMessage('`' + title + '` added to song queue.');
-                });
+                messageChannel.sendMessage('`' + songRequest.title + '` (' + songRequest.duration
+                    + ') added to song queue.');
             }
         }, function(error) {
-            console.log(error);
-            messageChannel.sendMessage('There was an error processing your song request. Please try again.');
+            if (error instanceof TooLongError) {
+                messageChannel.sendMessage('Songs that are over a day in length cannot be '
+                    + 'requested.');
+            } else {
+                console.log(error);
+                messageChannel.sendMessage('There was an error processing your song request. '
+                    + 'Please try again.');
+            }
         });
     } else if (msg.content === prefix + 'queue') {
         if (!songQueue.length) {
@@ -131,19 +146,21 @@ bot.on('message', function(msg) {
         } else {
             var queueMessage = '';
             // wrap url in angled brackets to prevent embed
-            queueMessage += 'Currently playing `' + songQueue[0].title + '`, requested by `'
-                + songQueue[0].requester + '`.\n<' + songQueue[0].url + '>\n';
+            queueMessage += 'Currently playing `' + songQueue[0].title + '` ('
+                + songQueue[0].duration + '), requested by `' + songQueue[0].requester
+                + '`.\n<' + songQueue[0].url + '>\n';
             if (songQueue.length > 1) {
                 queueMessage += 'Up next:\n';
                 for (let i = 1; i < songQueue.length; i++) {
-                    queueMessage += i + ') `' + songQueue[i].title + '`, requested by `'
-                        + songQueue[i].requester + '`.\n';
+                    queueMessage += i + ') `' + songQueue[i].title + '` ('
+                        + songQueue[i].duration + '), requested by `' + songQueue[i].requester
+                        + '`.\n';
                 }
             }
             // cut out the last \n
             messageChannel.sendMessage(queueMessage.slice(0, -1));
         }
-    } else if (dispatcher === null && ['.pause', '.resume', '.skip', '.repeat'].indexOf(msg.content) !== -1) {
+    } else if (dispatcher === null && invalidIfNoSong.indexOf(msg.content) !== -1) {
         // these commands are invalid if no song is playing
         messageChannel.sendMessage('No song is currently being played.');
     } else if (msg.content === prefix + 'pause') {

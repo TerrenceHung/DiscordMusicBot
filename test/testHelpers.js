@@ -3,6 +3,7 @@ var rewire = require('rewire');
 var chai = require('chai');
 var expect = chai.expect;
 var helpers = rewire('../src/helpers');
+var TooLongError = require('../src/TooLongError');
 
 describe('convertTime()', function() {
     before(function() {
@@ -138,5 +139,29 @@ describe('convertTime()', function() {
     it('should convert a time with more than 9 hours, more than 9 minutes, and more than 9 seconds', function() {
         expected = '23:22:21';
         expect(convertTime('PT23H22M21S')).to.equal(expected);
+    });
+
+    it('should throw a TooLongError if the time has a year in it', function() {
+        expect(function() {
+            convertTime('P1YT5H20M5S')
+        }).to.throw(TooLongError);
+    });
+
+    it('should throw a TooLongError if the time has a month in it', function() {
+        expect(function() {
+            convertTime('P1MT2H1M20S')
+        }).to.throw(TooLongError);
+    });
+
+    it('should throw a TooLongError if the time has a week in it', function() {
+        expect(function() {
+            convertTime('P1WT6H50M1S')
+        }).to.throw(TooLongError);
+    });
+
+    it('should throw a TooLongError if the time has a day in it', function() {
+        expect(function() {
+            convertTime('P1DT5H20M15S')
+        }).to.throw(TooLongError);
     });
 });

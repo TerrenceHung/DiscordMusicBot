@@ -122,7 +122,7 @@ module.exports = {
                         var duration = convertTime(rawDuration);
                     } catch (err) {
                         if (err instanceof TooLongError) {
-                            reject(new TooLongError());
+                            reject(err);
                         }
                     }
                     resolve({title: title, duration: duration});

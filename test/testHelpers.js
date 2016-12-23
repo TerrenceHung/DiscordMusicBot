@@ -4,11 +4,11 @@ var chai = require('chai');
 var expect = chai.expect;
 var helpers = rewire('../src/helpers');
 var TooLongError = require('../src/TooLongError');
+var expected;
 
 describe('convertTime()', function() {
     before(function() {
         convertTime = helpers.__get__('convertTime');
-        var expected;
     });
 
     it('should convert a time with only less than 10 seconds', function() {
@@ -162,6 +162,12 @@ describe('convertTime()', function() {
     it('should throw a TooLongError if the time has a day in it', function() {
         expect(function() {
             convertTime('P1DT5H20M15S')
+        }).to.throw(TooLongError);
+    });
+
+    it('should throw a TooLongError if the time has a year, month, week, and day in it', function() {
+        expect(function() {
+            convertTime('P1Y2M3W4DT5H9M6S')
         }).to.throw(TooLongError);
     });
 });

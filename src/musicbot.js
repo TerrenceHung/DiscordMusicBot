@@ -3,6 +3,7 @@ var Discord = require('discord.js');
 var youtubeStream = require('youtube-audio-stream');
 var Helpers = require('./helpers');
 var TooLongError = require('./TooLongError');
+var SongRequest = require('./SongRequest');
 
 var bot = new Discord.Client();
 var token;
@@ -114,11 +115,10 @@ bot.on('message', function(msg) {
         var previouslyActive = currentVoiceChannel === null ? false : true;
 
         var songUrl = msg.content.split(' ')[1];
-        var songRequest = {requester: msg.author.username, url: songUrl};
         Helpers.getSongInfo(songUrl).then(function(info) {
             // only process the song if the info can be obtained
-            songRequest.title = info.title;
-            songRequest.duration = info.duration;
+            var songRequest = new SongRequest(info.title, songUrl, info.duration,
+                msg.author.username);
             songQueue.push(songRequest);
             if (!previouslyActive) {
                 // not playing anything, so join a channel and play

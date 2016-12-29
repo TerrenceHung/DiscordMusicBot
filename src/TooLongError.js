@@ -1,4 +1,12 @@
+/**
+ * An error for when a song is too long.
+ */
 class TooLongError extends Error {
+    /**
+     * Creates a too long error.
+     *
+     * @param {String} [message] The custom message for the error
+     */
     constructor(message) {
         super(message);
         this.name = 'TooLongError';

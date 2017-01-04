@@ -1,11 +1,13 @@
 var fs = require('fs');
 var Discord = require('discord.js');
 var youtubeStream = require('youtube-audio-stream');
+var mongoose = require('mongoose');
 var Helpers = require('./helpers');
 var TooLongError = require('./TooLongError');
 var SongRequest = require('./SongRequest');
 
 var bot = new Discord.Client();
+var db = mongoose.connection;
 var token;
 var messageChannel;
 var currentVoiceChannel = null;
@@ -209,4 +211,13 @@ bot.on('message', function(msg) {
     }
 });
 
-bot.login(token);
+db.on('error', function() {
+    console.log('Could not connect to mongodb');
+    process.exit();
+});
+
+db.once('open', function() {
+    bot.login(token);
+});
+
+mongoose.connect('mongodb://localhost/musicbot');

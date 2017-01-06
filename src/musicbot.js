@@ -2,7 +2,7 @@ var fs = require('fs');
 var Discord = require('discord.js');
 var youtubeStream = require('youtube-audio-stream');
 var mongoose = require('mongoose');
-var Helpers = require('./helpers');
+var helpers = require('./helpers');
 var TooLongError = require('./TooLongError');
 var SongRequest = require('./SongRequest');
 var models = require('./models');
@@ -28,12 +28,12 @@ var invalidIfNoSong = ['.pause', '.resume', '.skip','.repeat', '.stoprepeat'];
  */
 function playSong(connection, songRequest) {
     dispatcher = connection.playStream(youtubeStream(songRequest.url));
-    dispatcher.setVolume(Helpers.downscaleVolume(volume));
+    dispatcher.setVolume(helpers.downscaleVolume(volume));
     messageChannel.sendMessage('Now playing `' + songRequest.title + '` (' + songRequest.duration
         + '), requested by `' + songRequest.requester + '`.');
     bot.user.setGame(songRequest.title);
 
-    dispatcher.on('end', function() {
+    dispatcher.on('end', function () {
         bot.user.setGame();
         if (repeat) {
             playSong(connection, songQueue[0]);
@@ -59,16 +59,16 @@ try {
     process.exit();
 }
 
-process.on('SIGINT', function() {
+process.on('SIGINT', function () {
     bot.destroy();
     process.exit();
 });
 
-bot.on('ready', function() {
+bot.on('ready', function () {
     console.log('Bot ready');
 });
 
-bot.on('message', function(msg) {
+bot.on('message', function (msg) {
     let prefix = '.';
     // if not a bot command or message was sent from bot then do nothing
     if (!(msg.content.startsWith(prefix)) || msg.author.bot) {
@@ -118,14 +118,14 @@ bot.on('message', function(msg) {
         var previouslyActive = currentVoiceChannel === null ? false : true;
 
         var songUrl = msg.content.split(' ')[1];
-        Helpers.getSongInfo(songUrl).then(function(info) {
+        helpers.getSongInfo(songUrl).then(function (info) {
             // only process the song if the info can be obtained
             var songRequest = new SongRequest(info.title, songUrl, info.duration,
                 msg.author.username);
             songQueue.push(songRequest);
             if (!previouslyActive) {
                 // not playing anything, so join a channel and play
-                channelToStream.join().then(function(connection) {
+                channelToStream.join().then(function (connection) {
                     currentVoiceChannel = channelToStream;
                     playSong(connection, songRequest);
                 });
@@ -133,7 +133,7 @@ bot.on('message', function(msg) {
                 messageChannel.sendMessage('`' + songRequest.title + '` (' + songRequest.duration
                     + ') added to song queue.');
             }
-        }, function(error) {
+        }, function (error) {
             if (error instanceof TooLongError) {
                 messageChannel.sendMessage('Songs that are over a day in length cannot be '
                     + 'requested.');
@@ -206,15 +206,15 @@ bot.on('message', function(msg) {
         volume = inVolume;
         // if a song is currently playing then change the volume of it
         if (dispatcher !== null) {
-            dispatcher.setVolume(Helpers.downscaleVolume(volume));
+            dispatcher.setVolume(helpers.downscaleVolume(volume));
         }
         messageChannel.sendMessage('Volume changed to ' + volume + '.');
     }
 });
 
-bot.on('guildCreate', function(guild) {
+bot.on('guildCreate', function (guild) {
     // if the server id does not exist in the database, then add it and save
-    models.Server.findOne({ _id: guild.id }, function(error, result) {
+    models.Server.findOne({ _id: guild.id }, function (error, result) {
         if (!error && result === null) {
             var server = new models.Server({ _id: guild.id });
             server.save();
@@ -222,12 +222,12 @@ bot.on('guildCreate', function(guild) {
     });
 });
 
-db.on('error', function() {
+db.on('error', function () {
     console.log('Could not connect to mongodb');
     process.exit();
 });
 
-db.once('open', function() {
+db.once('open', function () {
     bot.login(token);
 });
 

@@ -7,7 +7,7 @@ class TooLongError extends Error {
      *
      * @constructor
      * @this {TooLongError}
-     * @param {String} [message] The custom message for the error
+     * @param {string} [message] The custom message for the error
      */
     constructor(message) {
         super(message);

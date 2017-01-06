@@ -7,10 +7,10 @@ class SongRequest {
      *
      * @constructor
      * @this {SongRequest}
-     * @param {String} title The title of the song
-     * @param {String} url The YouTube url of the song
-     * @param {String} duration The duration of the song
-     * @param {String} requester The username of the person who requested the song
+     * @param {string} title The title of the song
+     * @param {string} url The YouTube url of the song
+     * @param {string} duration The duration of the song
+     * @param {string} requester The username of the person who requested the song
      */
     constructor(title, url, duration, requester) {
         this.title = title;

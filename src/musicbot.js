@@ -5,6 +5,7 @@ var mongoose = require('mongoose');
 var Helpers = require('./helpers');
 var TooLongError = require('./TooLongError');
 var SongRequest = require('./SongRequest');
+var models = require('./models');
 
 var bot = new Discord.Client();
 var db = mongoose.connection;
@@ -209,6 +210,16 @@ bot.on('message', function(msg) {
         }
         messageChannel.sendMessage('Volume changed to ' + volume + '.');
     }
+});
+
+bot.on('guildCreate', function(guild) {
+    // if the server id does not exist in the database, then add it and save
+    models.Server.findOne({ _id: guild.id }, function(error, result) {
+        if (!error && result === null) {
+            var server = new models.Server({ _id: guild.id });
+            server.save();
+        }
+    });
 });
 
 db.on('error', function() {

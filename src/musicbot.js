@@ -52,15 +52,9 @@ function playSong(connection, songRequest) {
     });
 }
 
-try {
-    token = fs.readFileSync(__dirname + '/../token', 'utf8');
-} catch (err) {
-    console.log('Could not open token file');
-    process.exit();
-}
-
 process.on('SIGINT', function () {
     bot.destroy();
+    mongoose.disconnect();
     process.exit();
 });
 
@@ -231,4 +225,11 @@ db.once('open', function () {
     bot.login(token);
 });
 
-mongoose.connect('mongodb://localhost/musicbot');
+fs.readFile(__dirname + '/../token', 'utf8', function (err, data) {
+    if (err) {
+        console.log('Could not open token file');
+        process.exit();
+    }
+    token = data;
+    mongoose.connect('mongodb://localhost/musicbot');
+});

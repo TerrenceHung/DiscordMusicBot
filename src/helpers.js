@@ -16,8 +16,8 @@ fs.readFile(__dirname + '/../youtube_api_key', 'utf8', function (err, data) {
  * Gets the ID of a YouTube video given the video URL.
  * Taken from https://gist.github.com/takien/4077195
  *
- * @param {String} url The url of the YouTube video
- * @return {String} The ID of the video
+ * @param {string} url The url of the YouTube video
+ * @return {string} The ID of the video
  */
 function youtubeGetId(url) {
     var ID = '';
@@ -35,8 +35,8 @@ function youtubeGetId(url) {
  * Converts a time in ISO 8601 format to HH:MM:SS or MM:SS if the time does not contain hours,
  * or M:SS if the time does not contain hours and is less than 10 minutes.
  *
- * @param {String} time The time in ISO 8601 format
- * @return {String} The time formatted in HH:MM:SS or MM:SS
+ * @param {string} time The time in ISO 8601 format
+ * @return {string} The time formatted in HH:MM:SS or MM:SS
  * @throws {TooLongError} Time must be less than a day
  */
 function convertTime(time) {
@@ -101,17 +101,17 @@ module.exports = {
     /**
      * Gets the name and duration of the song given a YouTube url.
      *
-     * @param {String} url The url of the YouTube video
-     * @return {Promise<String[]>} A promise to the video info
+     * @param {string} url The url of the YouTube video
+     * @return {Promise<string[]>} A promise to the video info
      */
-    getSongInfo: function(url) {
-        return new Promise(function(resolve, reject) {
+    getSongInfo: function (url) {
+        return new Promise(function (resolve, reject) {
             var videoId = youtubeGetId(url);
             // get response from youtube API and convert JSON to javascript object
             var ytResponseUrl = 'https://www.googleapis.com/youtube/v3/videos?id=' + videoId
                 + '&key=' + youtubeApiKey + '&part=snippet,contentDetails&fields=items(snippet('
                 + 'title),%20contentDetails(duration))';
-            request(ytResponseUrl, function(error, response, body) {
+            request(ytResponseUrl, function (error, response, body) {
                 if (!error && response.statusCode === 200) {
                     try {
                         var title = JSON.parse(body)['items'][0]['snippet']['title'];
@@ -136,10 +136,10 @@ module.exports = {
     /**
      * Converts the volume from a scale from 0-100 to a scale from 0-2.
      *
-     * @param {Number} volume The volume in a scale from 0-100
-     * @return {Number} The volume in a scale from 0-2
+     * @param {number} volume The volume in a scale from 0-100
+     * @return {number} The volume in a scale from 0-2
      */
-    downscaleVolume: function(volume) {
+    downscaleVolume: function (volume) {
         return volume * 2 / 100;
     }
 }

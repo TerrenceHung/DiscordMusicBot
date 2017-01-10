@@ -1,14 +1,15 @@
 var mongoose = require('mongoose');
+var constants = require('./constants');
 
 var serverSchema = new mongoose.Schema({
     _id: String,
     repeat: {
         type: Boolean,
-        default: false
+        default: constants.REPEAT
     },
     volume: {
         type: Number,
-        default: 50
+        default: constants.VOLUME
     }
 });
 

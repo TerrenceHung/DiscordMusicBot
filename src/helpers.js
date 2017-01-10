@@ -4,13 +4,12 @@ var TooLongError = require('./TooLongError');
 
 var youtubeApiKey;
 
-fs.readFileSync(__dirname + '/../youtube_api_key', 'utf8', function (err, data) {
-    if (err) {
-        console.log('Could not open YouTube API Key file');
-        process.exit();
-    }
-    youtubeApiKey = data;
-});
+try {
+    youtubeApiKey = fs.readFileSync(__dirname + '/../youtube_api_key', 'utf8');
+} catch (err) {
+    console.log('Could not open Youtube API Key file');
+    process.exit();
+}
 
 /**
  * Gets the ID of a YouTube video given the video URL.

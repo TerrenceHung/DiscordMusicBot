@@ -1,4 +1,3 @@
 module.exports = {
-    VOLUME: 50,
-    REPEAT: false
+    VOLUME: 50
 }

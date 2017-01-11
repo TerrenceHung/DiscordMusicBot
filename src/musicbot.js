@@ -59,7 +59,7 @@ bot.on('message', function (msg) {
 
     // if the message is sent from a server that hasn't been registered yet, keep track of the
     // message
-    if (servers[serverId] instanceof Array && !servers[serverId].length) {
+    if (servers[serverId] instanceof Array) {
         servers[serverId].push(msg);
         return;
     }

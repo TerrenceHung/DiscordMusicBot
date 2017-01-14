@@ -150,7 +150,13 @@ class ServerController {
         }
 
         // check if a url or a search query was given
-        var query = msg.content.split(' ').slice(1).join(' ');
+        var query = msg.content.split(' ').slice(1).join(' ').trim();
+        // if there was nothing after .play then give an error message
+        if (!query) {
+            this._messageChannel.sendMessage('You must give a search query or URL for a YouTube '
+                + 'video.');
+            return;
+        }
         var songUrl;
         var videoId;
         if (!validator.isURL(query)) {

@@ -5,7 +5,8 @@ var TooLongError = require('./TooLongError');
 var youtubeApiKey;
 
 try {
-    youtubeApiKey = fs.readFileSync(__dirname + '/../youtube_api_key', 'utf8');
+    var config = fs.readFileSync(__dirname + '/../cfg_helpers.json', 'utf8');
+    youtubeApiKey = JSON.parse(config).youtube_api_key;
 } catch (err) {
     console.log('Could not open Youtube API Key file');
     process.exit();

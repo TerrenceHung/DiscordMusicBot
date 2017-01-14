@@ -1,4 +1,5 @@
 var youtubeStream = require('youtube-audio-stream');
+var validator = require('validator');
 var helpers = require('./helpers');
 var SongRequest = require('./SongRequest');
 var TooLongError = require('./TooLongError');
@@ -64,6 +65,45 @@ class ServerController {
     }
 
     /**
+     * Processes a song request and either plays the song or sends an error message.
+     *
+     * @this {ServerController}
+     * @private
+     * @param {string} videoId The id of the YouTube video
+     * @param {string} songUrl The url of the YouTube video
+     * @param {Discord.VoiceChannel} channelToStream The voice channel to stream the song to
+     * @param {string} username The name of the user who requested the song
+     */
+    _processSong(videoId, songUrl, channelToStream, username) {
+        // if the bot is already inside a voice channel, then it's playing music
+        var previouslyActive = this._currentVoiceChannel === null ? false : true;
+        helpers.getSongInfo(videoId).then(info => {
+            // only process the song if the info can be obtained
+            var songRequest = new SongRequest(info.title, songUrl, info.duration, username);
+            this._songQueue.push(songRequest);
+            if (!previouslyActive) {
+                // not playing anything, so join a channel and play
+                channelToStream.join().then(connection => {
+                    this._currentVoiceChannel = channelToStream;
+                    this._playSong(connection, songRequest);
+                });
+            } else {
+                this._messageChannel.sendMessage('`' + songRequest.title + '` ('
+                    + songRequest.duration + ') added to song queue.');
+            }
+        }, error => {
+            if (error instanceof TooLongError) {
+                this._messageChannel.sendMessage('Songs that are over a day in length cannot be '
+                    + 'requested.');
+            } else {
+                console.log(error);
+                this._messageChannel.sendMessage('There was an error processing your song request. '
+                    + 'Please try again.');
+            }
+        });
+    }
+
+    /**
      * Plays a song or queues a song if there is one already playing.
      *
      * @this {ServerController}
@@ -109,35 +149,23 @@ class ServerController {
             return;
         }
 
-        // if the bot is already inside a voice channel, then it's playing music
-        var previouslyActive = this._currentVoiceChannel === null ? false : true;
+        // check if a url or a search query was given
+        var query = msg.content.split(' ').slice(1).join(' ');
+        var songUrl;
+        var videoId;
+        if (!validator.isURL(query)) {
+            // use youtube api to search and get the first video id
+            helpers.youtubeSearchVideos(query).then(result => {
+                videoId = result.videoId;
+                songUrl = `https://www.youtube.com/watch?v=${videoId}`;
+                this._processSong(videoId, songUrl, channelToStream, msg.author.username);
+            });
+        } else {
+            songUrl = query;
+            videoId = helpers.youtubeGetId(query);
+            this._processSong(videoId, songUrl, channelToStream, msg.author.username);
+        }
 
-        var songUrl = msg.content.split(' ')[1];
-        helpers.getSongInfo(songUrl).then(info => {
-            // only process the song if the info can be obtained
-            var songRequest = new SongRequest(info.title, songUrl, info.duration,
-                msg.author.username);
-            this._songQueue.push(songRequest);
-            if (!previouslyActive) {
-                // not playing anything, so join a channel and play
-                channelToStream.join().then(connection => {
-                    this._currentVoiceChannel = channelToStream;
-                    this._playSong(connection, songRequest);
-                });
-            } else {
-                this._messageChannel.sendMessage('`' + songRequest.title + '` ('
-                    + songRequest.duration + ') added to song queue.');
-            }
-        }, error => {
-            if (error instanceof TooLongError) {
-                this._messageChannel.sendMessage('Songs that are over a day in length cannot be '
-                    + 'requested.');
-            } else {
-                console.log(error);
-                this._messageChannel.sendMessage('There was an error processing your song request. '
-                    + 'Please try again.');
-            }
-        });
     }
 
     /**

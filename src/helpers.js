@@ -12,25 +12,6 @@ try {
 }
 
 /**
- * Gets the ID of a YouTube video given the video URL.
- * Taken from https://gist.github.com/takien/4077195
- *
- * @param {string} url The url of the YouTube video
- * @return {string} The ID of the video
- */
-function youtubeGetId(url) {
-    var ID = '';
-    url = url.replace(/(>|<)/gi,'').split(/(vi\/|v=|\/v\/|youtu\.be\/|\/embed\/)/);
-    if (url[2] !== undefined) {
-        ID = url[2].split(/[^0-9a-z_\-]/i);
-        ID = ID[0];
-    } else {
-        ID = url;
-    }
-    return ID;
-}
-
-/**
  * Converts a time in ISO 8601 format to HH:MM:SS or MM:SS if the time does not contain hours,
  * or M:SS if the time does not contain hours and is less than 10 minutes.
  *
@@ -98,14 +79,31 @@ function convertTime(time) {
 
 module.exports = {
     /**
-     * Gets the name and duration of the song given a YouTube url.
+     * Gets the ID of a YouTube video given the video URL.
+     * Taken from https://gist.github.com/takien/4077195
      *
      * @param {string} url The url of the YouTube video
+     * @return {string} The ID of the video
+     */
+    youtubeGetId: function (url) {
+        var ID = '';
+        url = url.replace(/(>|<)/gi,'').split(/(vi\/|v=|\/v\/|youtu\.be\/|\/embed\/)/);
+        if (url[2] !== undefined) {
+            ID = url[2].split(/[^0-9a-z_\-]/i);
+            ID = ID[0];
+        } else {
+            ID = url;
+        }
+        return ID;
+    },
+    /**
+     * Gets the name and duration of the song given a YouTube video id.
+     *
+     * @param {string} videoId The video id of a YouTube video
      * @return {Promise<string[]>} A promise to the video info
      */
-    getSongInfo: function (url) {
+    getSongInfo: function (videoId) {
         return new Promise(function (resolve, reject) {
-            var videoId = youtubeGetId(url);
             // get response from youtube API and convert JSON to javascript object
             var ytResponseUrl = 'https://www.googleapis.com/youtube/v3/videos?id=' + videoId
                 + '&key=' + youtubeApiKey + '&part=snippet,contentDetails&fields=items(snippet('
@@ -140,5 +138,27 @@ module.exports = {
      */
     downscaleVolume: function (volume) {
         return volume * 2 / 100;
+    },
+    /**
+     * Returns the results of searching the given query on YouTube.
+     *
+     * @param {string} query The query to search
+     * @param {string} [nextPage] The next page token to get the next page of results
+     * @return {string} A JSON string containing the results
+     */
+    youtubeSearchVideos: function (query, nextPage) {
+        nextPage = nextPage || '';
+        return new Promise(function (resolve, reject) {
+            var ytSearchUrl = 'https://www.googleapis.com/youtube/v3/search?key=' + youtubeApiKey
+                + '&safesearch=none&q=' + query + '&maxResults=50&type=video&part=snippet&fields='
+                + 'nextPageToken,items(id(videoId))&pageToken=' + nextPage;
+            request(ytSearchUrl, function (error, response, body) {
+                if (!error && response.statusCode === 200) {
+                    resolve({videoId: JSON.parse(body)['items'][0]['id']['videoId']});
+                } else {
+                    reject(Error('Could not search YouTube.'));
+                }
+            });
+        });
     }
 }

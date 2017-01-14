@@ -4,7 +4,8 @@
   "description": "Music player for your Discord servers!",
   "main": "src/musicbot.js",
   "scripts": {
-    "test": "mocha"
+    "test": "mocha",
+    "start": "node src/musicbot.js"
   },
   "repository": {
     "type": "git",

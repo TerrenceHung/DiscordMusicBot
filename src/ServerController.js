@@ -246,6 +246,7 @@ class ServerController {
      * @this {ServerController}
      */
     skip() {
+        this._repeat = false;
         this._dispatcher.end();
     }
 
@@ -310,6 +311,7 @@ class ServerController {
      * @this {ServerController}
      */
     stop() {
+        this._repeat = false;
         this._songQueue = [];
         this._dispatcher.end();
     }

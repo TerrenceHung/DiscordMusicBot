@@ -23,7 +23,7 @@ Clears the song queue and stops playing the current song.
 Skip the current song.
 
     .repeat
-Set the current song to play on repeat.
+Set the current song to play on repeat. Repeat is disabled when `.stop` or `.skip` is issued.
 
     .stoprepeat
 Stops playing the current song on repeat.

@@ -98,6 +98,8 @@ bot.on('message', function (msg) {
                 models.Server.update({_id: serverId}, {volume: inVolume}).exec();
             }
         }
+    } else if (msg.content === prefix + 'stop') {
+        serverController.stop();
     }
 });
 

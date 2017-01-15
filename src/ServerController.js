@@ -305,6 +305,16 @@ class ServerController {
     }
 
     /**
+     * Clears the song queue and stops playing the current song.
+     *
+     * @this {ServerController}
+     */
+    stop() {
+        this._songQueue = [];
+        this._dispatcher.end();
+    }
+
+    /**
      * Checks if the server is currently playing a song.
      *
      * @this {ServerController}

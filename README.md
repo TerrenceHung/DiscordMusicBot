@@ -16,6 +16,9 @@ Pause the current song.
     .resume
 Resume playing the current song if it is paused.
 
+    .stop
+Clears the song queue and stops playing the current song.
+
     .skip
 Skip the current song.
 

@@ -3,6 +3,8 @@ Music player for your Discord servers!
 
 [Click here to add Music Bot to your server](https://discordapp.com/oauth2/authorize?&client_id=229835293744693249&scope=bot&permissions=0)
 
+DiscordMusicBot is currently deployed using Heroku.
+
 ## Commands
     .play <query>
 Give a YouTube video URL or a search query, and the bot will stream the audio in the voice channel you are currently in. If a song is currently playing then your request will be added to the queue.

@@ -2,15 +2,7 @@ var fs = require('fs');
 var request = require('request');
 var TooLongError = require('./TooLongError');
 
-var youtubeApiKey;
-
-try {
-    var config = fs.readFileSync(__dirname + '/../cfg_helpers.json', 'utf8');
-    youtubeApiKey = JSON.parse(config).youtube_api_key;
-} catch (err) {
-    console.log('Could not open Youtube API Key file');
-    process.exit();
-}
+var youtubeApiKey = process.env.YOUTUBE_API_KEY;
 
 /**
  * Converts a time in ISO 8601 format to HH:MM:SS or MM:SS if the time does not contain hours,

@@ -112,12 +112,5 @@ db.once('open', function () {
     bot.login(token);
 });
 
-fs.readFile(__dirname + '/../cfg_musicbot.json', 'utf8', function (err, data) {
-    if (err) {
-        console.log('Could not open musicbot config file');
-        process.exit();
-    }
-    var config = JSON.parse(data);
-    token = config.discord_token;
-    mongoose.connect(config.mongodb_uri);
-});
+token = process.env.DISCORD_TOKEN;
+mongoose.connect(process.env.MONGODB_URI);

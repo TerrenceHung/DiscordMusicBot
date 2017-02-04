@@ -1,4 +1,3 @@
-var fs = require('fs');
 var Discord = require('discord.js');
 var mongoose = require('mongoose');
 var models = require('./models')(mongoose);

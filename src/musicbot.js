@@ -44,8 +44,8 @@ bot.on('message', function (msg) {
             if (server === null) {
                 servers[serverId] = new ServerController(bot, serverId, msg.guild,
                     constants.VOLUME);
-                var server = new models.Server({_id: serverId});
-                server.save();
+                var newServer = new models.Server({_id: serverId});
+                newServer.save();
             } else {
                 servers[serverId] = new ServerController(bot, server._id, msg.guild, server.volume);
             }

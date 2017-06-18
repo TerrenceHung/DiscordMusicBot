@@ -258,7 +258,7 @@ class ServerController {
     repeat() {
         this._repeat = true;
         this._messageChannel.sendMessage('`' + this._songQueue[0].title + '` is now playing on '
-            + 'repeat. Type `.stoprepeat` to continue playing song queue.')
+            + 'repeat. Type `.stoprepeat` to continue playing song queue.');
     }
 
     /**

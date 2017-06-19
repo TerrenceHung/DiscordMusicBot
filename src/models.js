@@ -12,7 +12,7 @@ module.exports = function(mongoose) {
 
     var models = {
         Server: mongoose.model('Server', serverSchema)
-    }
+    };
 
     return models;
-}
+};

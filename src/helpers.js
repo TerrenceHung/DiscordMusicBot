@@ -68,9 +68,9 @@ function convertTime(time) {
     if (houridx !== -1) {
         // number of hours is in between T and H
         var hours = time.substring(timeidx + 1, houridx);
-        var minutes = formatted.split(':')[0];
+        var mins = formatted.split(':')[0];
         // if there were no minutes or minutes are single digit, then prepend another 0
-        if (minuteidx === -1 || minutes.length === 1) {
+        if (minuteidx === -1 || mins.length === 1) {
             formatted = '0' + formatted;
         }
         formatted = hours + ':' + formatted;
@@ -162,4 +162,4 @@ module.exports = {
             });
         });
     }
-}
+};

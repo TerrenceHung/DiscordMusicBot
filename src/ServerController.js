@@ -43,7 +43,7 @@ class ServerController {
     _playSong(connection, songRequest) {
         this._dispatcher = connection.playStream(youtubeStream(songRequest.url));
         this._dispatcher.setVolume(helpers.downscaleVolume(this._volume));
-        this._messageChannel.sendMessage('Now playing `' + songRequest.title + '` ('
+        this._messageChannel.send('Now playing `' + songRequest.title + '` ('
             + songRequest.duration + '), requested by `' + songRequest.requester + '`.');
 
         this._dispatcher.on('end', () => {
@@ -88,16 +88,16 @@ class ServerController {
                     this._playSong(connection, songRequest);
                 });
             } else {
-                this._messageChannel.sendMessage('`' + songRequest.title + '` ('
+                this._messageChannel.send('`' + songRequest.title + '` ('
                     + songRequest.duration + ') added to song queue.');
             }
         }, error => {
             if (error instanceof TooLongError) {
-                this._messageChannel.sendMessage('Songs that are over a day in length cannot be '
+                this._messageChannel.send('Songs that are over a day in length cannot be '
                     + 'requested.');
             } else {
                 console.log(error);
-                this._messageChannel.sendMessage('There was an error processing your song request. '
+                this._messageChannel.send('There was an error processing your song request. '
                     + 'Please try again.');
             }
         });
@@ -139,11 +139,11 @@ class ServerController {
             }
         }
         if (channelToStream === null) {
-            this._messageChannel.sendMessage('You must be in a voice channel to play a song.');
+            this._messageChannel.send('You must be in a voice channel to play a song.');
             return;
         } else if (this._currentVoiceChannel !== null
                 && channelToStream.id !== this._currentVoiceChannel.id) {
-            this._messageChannel.sendMessage('The bot is currently playing music in `'
+            this._messageChannel.send('The bot is currently playing music in `'
                 + this._currentVoiceChannel.name + '`. Please join that voice channel before '
                 + 'requesting songs.');
             return;
@@ -153,7 +153,7 @@ class ServerController {
         var query = msg.content.split(' ').slice(1).join(' ').trim();
         // if there was nothing after .play then give an error message
         if (!query) {
-            this._messageChannel.sendMessage('You must give a search query or URL for a YouTube '
+            this._messageChannel.send('You must give a search query or URL for a YouTube '
                 + 'video.');
             return;
         }
@@ -181,7 +181,7 @@ class ServerController {
      */
     queue() {
         if (!this._songQueue.length) {
-            this._messageChannel.sendMessage('No songs in queue.');
+            this._messageChannel.send('No songs in queue.');
         } else {
             var queueMessage = '';
             // wrap url in angled brackets to prevent embed
@@ -197,7 +197,7 @@ class ServerController {
                 }
             }
             // cut out the last \n
-            this._messageChannel.sendMessage(queueMessage.slice(0, -1));
+            this._messageChannel.send(queueMessage.slice(0, -1));
         }
     }
 
@@ -207,7 +207,7 @@ class ServerController {
      * @this {ServerController}
      */
     invalidCommand() {
-        this._messageChannel.sendMessage('No song is currently being played.');
+        this._messageChannel.send('No song is currently being played.');
     }
 
     /**
@@ -218,10 +218,10 @@ class ServerController {
     pause() {
         var resumeMsg = 'Type `.resume` to resume playback.';
         if (this._dispatcher.paused) {
-            this._messageChannel.sendMessage('Song is already paused. ' + resumeMsg);
+            this._messageChannel.send('Song is already paused. ' + resumeMsg);
         } else {
             this._dispatcher.pause();
-            this._messageChannel.sendMessage('Playback paused. ' + resumeMsg);
+            this._messageChannel.send('Playback paused. ' + resumeMsg);
         }
     }
 
@@ -233,10 +233,10 @@ class ServerController {
     resume() {
         var pauseMsg = 'Type `.pause` to pause playback.';
         if (!this._dispatcher.paused) {
-            this._messageChannel.sendMessage('Song is already playing. ' + pauseMsg);
+            this._messageChannel.send('Song is already playing. ' + pauseMsg);
         } else {
             this._dispatcher.resume();
-            this._messageChannel.sendMessage('Playback resumed. ' + pauseMsg);
+            this._messageChannel.send('Playback resumed. ' + pauseMsg);
         }
     }
 
@@ -257,7 +257,7 @@ class ServerController {
      */
     repeat() {
         this._repeat = true;
-        this._messageChannel.sendMessage('`' + this._songQueue[0].title + '` is now playing on '
+        this._messageChannel.send('`' + this._songQueue[0].title + '` is now playing on '
             + 'repeat. Type `.stoprepeat` to continue playing song queue.');
     }
 
@@ -268,7 +268,7 @@ class ServerController {
      */
     stopRepeat() {
         this._repeat = false;
-        this._messageChannel.sendMessage('Repeat mode disabled. Type `.repeat` to play the current '
+        this._messageChannel.send('Repeat mode disabled. Type `.repeat` to play the current '
          + 'song on repeat.');
     }
 
@@ -278,7 +278,7 @@ class ServerController {
      * @this {ServerController}
      */
     getVolume() {
-        this._messageChannel.sendMessage('The current volume is ' + this._volume + '.');
+        this._messageChannel.send('The current volume is ' + this._volume + '.');
     }
 
     /**
@@ -287,7 +287,7 @@ class ServerController {
      * @this {ServerController}
      */
     invalidVolume() {
-        this._messageChannel.sendMessage('Please enter a value between 0 and 100 inclusive.');
+        this._messageChannel.send('Please enter a value between 0 and 100 inclusive.');
     }
 
     /**
@@ -302,7 +302,7 @@ class ServerController {
         if (this._dispatcher !== null) {
             this._dispatcher.setVolume(helpers.downscaleVolume(this._volume));
         }
-        this._messageChannel.sendMessage('Volume changed to ' + this._volume + '.');
+        this._messageChannel.send('Volume changed to ' + this._volume + '.');
     }
 
     /**

@@ -1,13 +1,12 @@
-var fs = require('fs');
 var Discord = require('discord.js');
 var mongoose = require('mongoose');
 var models = require('./models')(mongoose);
 var constants = require('./constants');
 var ServerController = require('./ServerController');
+var configs = require('./configs');
 
 var bot = new Discord.Client();
 var db = mongoose.connection;
-var token;
 var invalidIfNoSong = ['.pause', '.resume', '.skip','.repeat', '.stoprepeat'];
 var servers = {};
 
@@ -103,21 +102,8 @@ bot.on('message', function (msg) {
     }
 });
 
-db.on('error', function () {
-    console.log('Could not connect to mongodb');
-    process.exit();
-});
-
 db.once('open', function () {
-    bot.login(token);
+    bot.login(configs.discord_token);
 });
 
-fs.readFile(__dirname + '/../cfg_musicbot.json', 'utf8', function (err, data) {
-    if (err) {
-        console.log('Could not open musicbot config file');
-        process.exit();
-    }
-    var config = JSON.parse(data);
-    token = config.discord_token;
-    mongoose.connect(config.mongodb_uri);
-});
+mongoose.connect(configs.mongodb_uri);

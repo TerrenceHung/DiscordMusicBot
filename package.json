@@ -23,7 +23,7 @@
     "node-opus": "^0.2.4",
     "request": "^2.79.0",
     "validator": "^7.0.0",
-    "youtube-audio-stream": "0.0.48"
+    "youtube-audio-stream": "*"
   },
   "devDependencies": {
     "chai": "*",
